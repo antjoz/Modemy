@@ -22,18 +22,25 @@ class ModemTerminal:
                 try:
                     if self.ser.in_waiting:
                         msg = self.ser.readline().decode("utf-8", errors="ignore").strip()
-                        if msg:
-                            print(f"\rWiadomość: {msg}\n", end="")
+                        if "CONNECT" not in msg: 
+                            print(f"\rWiadomość: {msg}\n", end="") 
+                        else: 
+                            print("Połączono!")
                 except (serial.SerialException, OSError):
                     print("\nPort został zamknięty.")
                     break
             else:
-                time.sleep(0.1)
+                time.sleep(0.5)
 
-    def serial_get(self, size, timeout=1):
-        return self.ser.read(size) or None
+    def serial_get(self, size=1, timeout=1, *args, **kwargs):
+        # Odczytaj dokładnie 1 bajt lub None jeśli timeout
+        data = self.ser.read(size)
+        if data:
+            return data
+        else:
+            return None
 
-    def serial_put(self, data, timeout=1):
+    def serial_put(self, data, *args, **kwargs):
         return self.ser.write(data)
 
     def send_file(self, filename):
@@ -43,6 +50,7 @@ class ModemTerminal:
 
         self.transfer_active.set()
         print("\nWysyłanie pliku...")
+        time.sleep(0.5)
 
         try:
             modem = XMODEM(self.serial_get, self.serial_put)
@@ -69,7 +77,7 @@ class ModemTerminal:
             self.transfer_active.clear()
 
     def call_menu(self):
-        print("\nPołączono. Komendy: /send /receive /exit")
+        print("\nKomendy: /send /receive /exit")
 
         while True:
             msg = input("> ").strip()
@@ -108,7 +116,7 @@ class ModemTerminal:
             choice = input("Wybór: ")
 
             if choice == "1":
-                self.send_cmd("ATDT" + input("Numer: "))
+                self.send_cmd("ATD" + input("Numer: "))
                 self.call_menu()
 
             elif choice == "2":
